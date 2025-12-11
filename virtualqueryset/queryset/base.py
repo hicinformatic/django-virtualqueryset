@@ -212,11 +212,17 @@ class InMemoryQuerySet(QuerySet):
         for field in reversed(fields):
             reverse = field.startswith("-")
             field_name = field[1:] if reverse else field
-            rslt = sorted(
-                rslt,
-                key=lambda obj: getattr(obj, field_name, "") or "",
-                reverse=reverse,
-            )
+            
+            def get_field_value(obj):
+                """Get field value for sorting, handling None and strings."""
+                value = getattr(obj, field_name, None)
+                if value is None:
+                    return ""
+                if isinstance(value, str):
+                    return value.lower()
+                return value
+            
+            rslt.sort(key=get_field_value, reverse=reverse)
         return self.__class__(
             self.model,
             rslt,
