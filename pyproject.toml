@@ -27,13 +27,14 @@ dev = [
 Homepage = "https://github.com/yourusername/django-virtualqueryset"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["virtualqueryset*"]
 exclude = ["tests*"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"
 testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.mypy]
 python_version = "3.10"

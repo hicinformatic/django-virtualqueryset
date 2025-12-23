@@ -61,8 +61,28 @@ class InMemoryQuerySet(QuerySet):
         return self._result_cache[k]
 
     def __iter__(self):
-        """Iterate over cached results."""
-        return iter(self._result_cache)
+        """Iterate over cached results, applying ordering from query if present."""
+        rslt = self._result_cache
+        # Apply ordering from query.order_by if present (Django admin sets this)
+        if hasattr(self.query, "order_by") and self.query.order_by:
+            ordering = self.query.order_by
+            if ordering:
+                rslt = list(rslt)
+                for field in reversed(ordering):
+                    reverse = field.startswith("-")
+                    field_name = field[1:] if reverse else field
+                    
+                    def get_field_value(obj):
+                        """Get field value for sorting, handling None and strings."""
+                        value = getattr(obj, field_name, None)
+                        if value is None:
+                            return ""
+                        if isinstance(value, str):
+                            return value.lower()
+                        return value
+                    
+                    rslt.sort(key=get_field_value, reverse=reverse)
+        return iter(rslt)
 
     def _clone(self):
         """Clone this queryset with copied data."""
@@ -212,15 +232,27 @@ class InMemoryQuerySet(QuerySet):
         for field in reversed(fields):
             reverse = field.startswith("-")
             field_name = field[1:] if reverse else field
-            rslt = sorted(
-                rslt,
-                key=lambda obj: getattr(obj, field_name, "") or "",
-                reverse=reverse,
-            )
+            
+            def get_field_value(obj):
+                """Get field value for sorting, handling None and strings."""
+                value = getattr(obj, field_name, None)
+                if value is None:
+                    return ""
+                if isinstance(value, str):
+                    return value.lower()
+                return value
+            
+            rslt.sort(key=get_field_value, reverse=reverse)
+        
+        # Update query.order_by to preserve ordering for subsequent operations
+        cloned_query = self.query.clone()
+        if hasattr(cloned_query, "order_by"):
+            cloned_query.order_by = list(fields)
+        
         return self.__class__(
             self.model,
             rslt,
-            self.query.clone(),
+            cloned_query,
             using=self._db,
             hints=self._hints,
         )
