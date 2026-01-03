@@ -1,6 +1,6 @@
 """Django VirtualQuerySet - QuerySet-like objects not backed by a database."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 default_app_config = "virtualqueryset.apps.VirtualQuerySetConfig"
 
