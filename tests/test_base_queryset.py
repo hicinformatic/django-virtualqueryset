@@ -2,7 +2,7 @@
 
 import pytest
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from virtualqueryset.queryset.base import InMemoryQuerySet
+from virtualqueryset import VirtualQuerySet as InMemoryQuerySet  # type: ignore[assignment]
 
 
 class MockModel:
@@ -21,7 +21,7 @@ class TestInMemoryQuerySet:
         """Test initialization with data."""
         data = [MockModel(name="Alice"), MockModel(name="Bob")]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         assert len(qs) == 2
         assert qs.count() == 2
 
@@ -32,7 +32,7 @@ class TestInMemoryQuerySet:
             MockModel(name="Bob", age=25),
         ]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.filter(name="Alice")
         assert result.count() == 1
         assert result.first().name == "Alice"
@@ -45,7 +45,7 @@ class TestInMemoryQuerySet:
             MockModel(name="alice brown"),
         ]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.filter(name__icontains="alice")
         assert result.count() == 2
 
@@ -57,7 +57,7 @@ class TestInMemoryQuerySet:
             MockModel(id=3, name="Charlie"),
         ]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.filter(id__in=[1, 3])
         assert result.count() == 2
 
@@ -69,7 +69,7 @@ class TestInMemoryQuerySet:
             MockModel(age=40),
         ]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.filter(age__gt=25)
         assert result.count() == 2
 
@@ -81,7 +81,7 @@ class TestInMemoryQuerySet:
             MockModel(name="Bob", age=35),
         ]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.order_by("name")
         assert result.first().name == "Alice"
         assert result.last().name == "Charlie"
@@ -94,7 +94,7 @@ class TestInMemoryQuerySet:
             MockModel(age=40),
         ]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.order_by("-age")
         assert result.first().age == 40
         assert result.last().age == 20
@@ -106,7 +106,7 @@ class TestInMemoryQuerySet:
             MockModel(id=2, name="Bob"),
         ]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.get(id=1)
         assert result.name == "Alice"
 
@@ -114,7 +114,7 @@ class TestInMemoryQuerySet:
         """Test get raises ObjectDoesNotExist."""
         data = [MockModel(id=1, name="Alice")]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         with pytest.raises(ObjectDoesNotExist):
             qs.get(id=999)
 
@@ -125,7 +125,7 @@ class TestInMemoryQuerySet:
             MockModel(status="active"),
         ]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         with pytest.raises(MultipleObjectsReturned):
             qs.get(status="active")
 
@@ -133,7 +133,7 @@ class TestInMemoryQuerySet:
         """Test queryset slicing."""
         data = [MockModel(id=i) for i in range(10)]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs[2:5]
         assert result.count() == 3
         assert result.first().id == 2
@@ -142,7 +142,7 @@ class TestInMemoryQuerySet:
         """Test first() and last()."""
         data = [MockModel(id=1), MockModel(id=2), MockModel(id=3)]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         assert qs.first().id == 1
         assert qs.last().id == 3
 
@@ -150,7 +150,7 @@ class TestInMemoryQuerySet:
         """Test exists()."""
         qs_empty = InMemoryQuerySet(model=MockModel, data=[])
         qs_full = InMemoryQuerySet(model=MockModel, data=[MockModel(id=1)])
-        
+
         assert not qs_empty.exists()
         assert qs_full.exists()
 
@@ -158,7 +158,7 @@ class TestInMemoryQuerySet:
         """Test values()."""
         data = [MockModel(name="Alice", age=30)]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.values("name", "age")
         assert len(result) == 1
         assert result[0]["name"] == "Alice"
@@ -167,7 +167,7 @@ class TestInMemoryQuerySet:
         """Test values_list()."""
         data = [MockModel(name="Alice", age=30)]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.values_list("name", "age")
         assert result[0] == ("Alice", 30)
 
@@ -175,7 +175,7 @@ class TestInMemoryQuerySet:
         """Test values_list with flat=True."""
         data = [MockModel(name="Alice"), MockModel(name="Bob")]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.values_list("name", flat=True)
         assert result == ["Alice", "Bob"]
 
@@ -186,7 +186,7 @@ class TestInMemoryQuerySet:
             MockModel(name="Bob", active=False),
         ]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.exclude(active=False)
         assert result.count() == 1
         assert result.first().name == "Alice"
@@ -195,7 +195,6 @@ class TestInMemoryQuerySet:
         """Test none()."""
         data = [MockModel(name="Alice")]
         qs = InMemoryQuerySet(model=MockModel, data=data)
-        
+
         result = qs.none()
         assert result.count() == 0
-

@@ -74,6 +74,7 @@ pythonpath = ["src"]
 python_version = "3.10"
 warn_return_any = true
 plugins = ["mypy_django_plugin.main"]
+mypy_path = "src"
 
 [tool.django-stubs]
 django_settings_module = "tests.settings"
