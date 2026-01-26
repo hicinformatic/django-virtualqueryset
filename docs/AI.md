@@ -1,4 +1,4 @@
-# AI Assistant Contract — Django VirtualQuerySet
+# AI Assistant Contract — Django Virtual QuerySet
 
 **This document is the single source of truth for all AI-generated work in this repository.**  
 All instructions in this file **override default AI behavior**.
@@ -28,7 +28,7 @@ These rules must always be followed.
 - Do not invent new services, commands, abstractions, patterns, or architectures
 - Do not refactor, redesign, or optimize unless explicitly requested
 - Do not manipulate `sys.path`
-- Do not use filesystem-based imports to access `qualitybase`
+- Do not use filesystem-based imports to access `qualitybase` or `virtualqueryset`
 - Do not hardcode secrets, credentials, tokens, or API keys
 - Do not execute tooling commands outside the approved entry points
 - **Comments**: Only add comments to resolve ambiguity or uncertainty. Do not comment obvious code.
@@ -65,46 +65,31 @@ These rules must always be followed.
 
 ## Project Overview (INFORMATIONAL)
 
-**Django VirtualQuerySet** is a Django library for creating QuerySet-like objects that are not backed by a database. It enables you to use Django's ORM patterns and admin interface with data from external sources.
+**Django Virtual QuerySet** is a Django library for creating QuerySet-like objects that are not backed by a database.
 
 ### Core Functionality
 
-1. **Virtual Models**: Create Django models without database tables
-2. **QuerySet-like interface**: Use Django QuerySet methods with in-memory data
-3. **Multiple data sources**: Load data from Django settings, external APIs, JSON files, or in-memory data
-4. **Django admin integration**: Display non-database data in Django admin
-5. **Caching support**: Add caching to any data source
+1. **Virtual Models** (`models.py`)
+   - Base `VirtualModel` class for models without database tables
+   - Support for external APIs, in-memory data, configuration
 
-### Available QuerySets
+2. **Virtual Manager** (`managers.py`)
+   - `VirtualManager` class for QuerySet-like operations
+   - Filtering, ordering, and data retrieval
 
-- `InMemoryQuerySet`: Base QuerySet for in-memory data
-- `ConfigQuerySet`: Loads data from Django settings
-- `APIQuerySet`: Loads data from external APIs
-- `JSONQuerySet`: Loads data from JSON files
-- `CachedQuerySet`: Adds caching to any QuerySet
-
-### Available Managers
-
-- `VirtualManager`: Base manager for virtual models
-- `ConfigQuerySetManager`: Manager for Django settings data
-- `APIQuerySetManager`: Manager for external API data
-- `JSONQuerySetManager`: Manager for JSON file data
-- `CachedQuerySetManager`: Manager with caching support
-
-### Base Models
-
-- `VirtualModel`: Base class for virtual models (no database table)
-- `ReadOnlyVirtualModel`: Explicitly read-only virtual model
+3. **QuerySet Utilities** (`queryset/`)
+   - Filtering operations (`filter.py`)
+   - Ordering operations (`order.py`)
+   - Data management (`data.py`)
 
 ---
 
 ## Architecture (REQUIRED)
 
-- QuerySet-based architecture for in-memory data
-- Managers provide interface between models and QuerySets
-- Models inherit from `VirtualModel` or `ReadOnlyVirtualModel`
-- All source code in `src/` directory
-- Source layout: `src/virtualqueryset/`
+- Manager-based architecture for QuerySet-like operations
+- Virtual models inherit from `VirtualModel` with `managed = False`
+- QuerySet utilities provide filtering, ordering, and data management
+- Compatible with Django ORM patterns and admin interface
 
 ---
 
@@ -112,32 +97,32 @@ These rules must always be followed.
 
 ```
 django-virtualqueryset/
-├── src/virtualqueryset/    # Main package
-│   ├── queryset/           # QuerySet implementations
-│   ├── models.py           # VirtualModel base classes
-│   ├── managers.py         # Manager classes
-│   └── apps.py             # Django app configuration
-├── tests/                  # Test suite
-├── docs/                   # Documentation
-├── manage.py               # Django management script
-├── service.py              # Main service entry point (qualitybase)
-└── pyproject.toml          # Project configuration
+├── src/virtualqueryset/      # Main package
+│   ├── models.py            # VirtualModel base class
+│   ├── managers.py          # VirtualManager class
+│   └── queryset/            # QuerySet utilities
+│       ├── data.py          # Data management
+│       ├── filter.py        # Filtering operations
+│       └── order.py         # Ordering operations
+├── tests/                   # Test suite
+├── docs/                    # Documentation
+├── service.py               # Main service entry point
+└── pyproject.toml           # Project configuration
 ```
 
 ### Key Directories
 
-- `src/virtualqueryset/queryset/`: QuerySet implementations
-- `src/virtualqueryset/models.py`: Base model classes
-- `src/virtualqueryset/managers.py`: Manager classes
-- `tests/`: All tests using pytest
+- `src/virtualqueryset/models.py`: `VirtualModel` base class
+- `src/virtualqueryset/managers.py`: `VirtualManager` for QuerySet operations
+- `src/virtualqueryset/queryset/`: QuerySet utilities for filtering and ordering
+- `tests/`: All tests using pytest-django
 
 ---
 
 ## Command Execution (ABSOLUTE)
 
-- **Always use**: `./service.py dev <command>` or `python service.py dev <command>`
-- **Always use**: `./service.py quality <command>` or `python service.py quality <command>`
-- **Always use**: `./service.py django <command>` or `python service.py django <command>`
+- **Always use**: `./service.py dev <command>` or `python dev.py <command>`
+- **Always use**: `./service.py quality <command>` or `python quality.py <command>`
 - Never execute commands directly without going through these entry points
 
 ---
@@ -155,7 +140,7 @@ django-virtualqueryset/
 
 ### Testing
 
-- Use **pytest** exclusively
+- Use **pytest** with **pytest-django** exclusively
 - All tests must live in the `tests/` directory
 - New features and bug fixes require corresponding tests
 
@@ -187,14 +172,27 @@ django-virtualqueryset/
 - Logical grouping of related functionality
 - Clear public API via `__init__.py`
 - Avoid circular dependencies
-- Source code in `src/` directory
+- Follow Django app structure conventions
+
+---
+
+## Virtual QuerySet Integration (ABSOLUTE)
+
+- `virtualqueryset` is an installed package
+- Always use standard Python imports:
+  - `from virtualqueryset.models import VirtualModel`
+  - `from virtualqueryset.managers import VirtualManager`
+- Never manipulate import paths
+- Never use file-based or relative imports to access `virtualqueryset`
+- For dynamic imports, use:
+  - `importlib.import_module()` from the standard library
 
 ---
 
 ## Qualitybase Integration (ABSOLUTE)
 
-- `qualitybase` is an installed package (used via service.py)
-- Always use standard Python imports from `qualitybase.services` when needed
+- `qualitybase` is an installed package (dependency)
+- Always use standard Python imports from `qualitybase.services`
 - No path manipulation: Never manipulate `sys.path` or use file paths to import qualitybase modules
 - Direct imports only: Use `from qualitybase.services import ...` or `import qualitybase.services ...`
 - Standard library imports: Use `importlib.import_module()` from the standard library if needed for dynamic imports
@@ -202,91 +200,34 @@ django-virtualqueryset/
 
 ---
 
-## QuerySet Development (REQUIRED)
-
-### Creating QuerySets
-
-QuerySets must inherit from `InMemoryQuerySet` or another QuerySet class:
-
-```python
-from virtualqueryset.queryset.base import InMemoryQuerySet
-
-class MyQuerySet(InMemoryQuerySet):
-    def __init__(self, model=None, data=None, **kwargs):
-        # Load data from source
-        data = self.load_data()
-        super().__init__(model=model, data=data, **kwargs)
-    
-    def load_data(self):
-        # Implement data loading logic
-        return []
-```
-
-### Required Methods
-
-- QuerySets should implement data loading logic
-- Support Django QuerySet methods (filter, exclude, order_by, etc.)
-- Support lazy evaluation where possible
-
----
-
-## Manager Development (REQUIRED)
-
-### Creating Managers
-
-Managers should inherit from `VirtualManager` or a specialized manager:
-
-```python
-from virtualqueryset.managers import VirtualManager
-from virtualqueryset.queryset.base import InMemoryQuerySet
-
-class MyManager(VirtualManager):
-    queryset_class = InMemoryQuerySet
-    
-    def get_data(self):
-        # Return list of model instances or dictionaries
-        return []
-```
-
-### Required Methods
-
-- Override `get_data()` to provide data source
-- Set `queryset_class` to specify which QuerySet to use
-
----
-
-## Model Development (REQUIRED)
+## Virtual Model Architecture (REQUIRED)
 
 ### Creating Virtual Models
 
-Virtual models must inherit from `VirtualModel` or `ReadOnlyVirtualModel`:
+Virtual models must inherit from `VirtualModel`:
 
 ```python
 from virtualqueryset.models import VirtualModel
-from virtualqueryset.managers import ConfigQuerySetManager
+from virtualqueryset.managers import VirtualManager
 
-class ConfigSetting(VirtualModel):
-    key = models.CharField(max_length=255)
-    value = models.TextField()
-    
-    objects = ConfigQuerySetManager('MY_SETTINGS')
+class MyVirtualModel(VirtualModel):
+    objects = VirtualManager()
     
     class Meta:
         managed = False
-    
-    def __str__(self):
-        return self.key
 ```
 
-### Required Meta Options
+### Managers
 
-- `managed = False`: All virtual models must have this
-- `abstract = True`: Base virtual models should be abstract
+- Use `VirtualManager` for QuerySet-like operations
+- Managers handle filtering, ordering, and data retrieval
+- Ensure compatibility with Django QuerySet patterns
 
-### Save and Delete
+### QuerySet Operations
 
-- By default, `save()` and `delete()` raise `NotImplementedError`
-- Override if custom persistence logic is needed
+- Implement filtering through `queryset/filter.py`
+- Implement ordering through `queryset/order.py`
+- Manage data through `queryset/data.py`
 
 ---
 
@@ -307,7 +248,6 @@ class ConfigSetting(VirtualModel):
 - Provide clear, actionable error messages
 - Do not swallow exceptions silently
 - Document exceptions in docstrings where relevant
-- Handle API failures with proper error handling when appropriate
 
 ---
 
@@ -328,15 +268,6 @@ class ConfigSetting(VirtualModel):
 - Follow **Semantic Versioning (SemVer)**
 - Update versions appropriately
 - Clearly document breaking changes
-
----
-
-## CLI System (INFORMATIONAL)
-
-Django VirtualQuerySet uses qualitybase's service system:
-
-- Services accessed via `./service.py <service> <command>`
-- Available services: `dev`, `quality`, `django`, `publish`
 
 ---
 
@@ -366,15 +297,12 @@ Before producing output, ensure:
 - [ ] Dependencies are minimal (prefer standard library)
 - [ ] Comments only resolve ambiguity (no obvious comments)
 - [ ] Code is well-factorized when it improves clarity (without adding complexity)
-- [ ] Imports follow Qualitybase rules
+- [ ] Imports follow Virtual QuerySet and Qualitybase rules
 - [ ] Public APIs are typed and documented
-- [ ] QuerySets inherit from InMemoryQuerySet correctly
-- [ ] Managers inherit from VirtualManager correctly
-- [ ] Models inherit from VirtualModel correctly
-- [ ] Models have `managed = False` in Meta
-- [ ] No secrets or credentials are hardcoded
+- [ ] Virtual models inherit from VirtualModel correctly
+- [ ] Managers use VirtualManager appropriately
 - [ ] Tests are included when required
-- [ ] Error handling is graceful
+- [ ] No secrets or credentials are exposed
 
 ---
 
