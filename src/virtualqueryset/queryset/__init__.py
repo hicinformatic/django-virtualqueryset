@@ -1,5 +1,6 @@
 from typing import Any, Iterable
 
+from django.db import models
 from django.db.models.query import QuerySet
 from django.db.models.sql import Query
 
@@ -8,10 +9,43 @@ from .filter import FilterMixin
 from .order import OrderMixin
 
 
+def create_dynamic_model(data):
+    """Create a dynamic model based on the first data item."""
+    if not data:
+        return None
+    
+    first_item = data[0] if isinstance(data, list) else next(iter(data), None)
+    if first_item is None:
+        return None
+    
+    # If it's a dict, extract fields from keys
+    if isinstance(first_item, dict):
+        fields = {}
+        for key in first_item.keys():
+            fields[key] = models.CharField(max_length=255)
+        
+        # Create a dynamic model class
+        attrs = {
+            '__module__': 'virtualqueryset.models',
+            'Meta': type('Meta', (), {
+                'managed': False,
+                'app_label': 'virtualqueryset',
+            }),
+            **fields
+        }
+        return type('DynamicModel', (models.Model,), attrs)
+    
+    return None
+
+
 class VirtualQuerySet(DataMixin, FilterMixin, OrderMixin, QuerySet):
     def __init__(
         self, model=None, data: Iterable[Any] | None = None, query=None, using=None, hints=None
     ):
+        # Create dynamic model if none provided and data contains dicts
+        if model is None and data:
+            model = create_dynamic_model(data)
+        
         if query is None and model is not None:
             query = Query(model)
         super().__init__(model=model, query=query, using=using, hints=hints)
@@ -19,20 +53,22 @@ class VirtualQuerySet(DataMixin, FilterMixin, OrderMixin, QuerySet):
         self._prefetch_done = True
 
     def _clone(self):
+        query = self.query.clone() if self.query else None
         return self.__class__(
-            self.model,
-            list(self._result_cache),
-            self.query.clone(),
+            model=self.model,
+            data=list(self._result_cache),
+            query=query,
             using=self._db,
             hints=self._hints,
         )
 
     def __getitem__(self, k):
         if isinstance(k, slice):
+            query = self.query.clone() if self.query else None
             return self.__class__(
-                self.model,
-                self._result_cache[k],
-                self.query.clone(),
+                model=self.model,
+                data=self._result_cache[k],
+                query=query,
                 using=self._db,
                 hints=self._hints,
             )
@@ -75,10 +111,11 @@ class VirtualQuerySet(DataMixin, FilterMixin, OrderMixin, QuerySet):
 
     def none(self):
         """Return an empty QuerySet."""
+        query = self.query.clone() if self.query else None
         return self.__class__(
-            self.model,
-            [],
-            self.query.clone(),
+            model=self.model,
+            data=[],
+            query=query,
             using=self._db,
             hints=self._hints,
         )
